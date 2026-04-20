@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://bot:secret@postgres:5432/botdetect
+      REDIS_URL: redis://redis:6379/0
+      CLICKHOUSE_URL: http://clickhouse:8123
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: botdetect
+      POSTGRES_USER: bot
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - ./server/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bot -d botdetect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save ""
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    ports:
+      - "8123:8123"
+    volumes:
+      - ./server/db/clickhouse.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - chdata:/var/lib/clickhouse
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  chdata:
