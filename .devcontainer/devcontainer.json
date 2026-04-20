@@ -1,0 +1,14 @@
+{
+  "name": "Bot Detector UAT",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [8000, 5432, 6379, 8123],
+  "portsAttributes": {
+    "8000": {"label": "FastAPI", "onAutoForward": "notify"},
+    "5432": {"label": "Postgres", "onAutoForward": "silent"},
+    "6379": {"label": "Redis",    "onAutoForward": "silent"}
+  },
+  "postCreateCommand": "pip install -r requirements.txt"
+}
