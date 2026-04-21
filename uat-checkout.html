@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>[UAT] Ticket Checkout Test</title>
+  <meta name="session-token" content="uat-session-001">
+  <style>
+    body { font-family: sans-serif; max-width: 520px; margin: 50px auto; padding: 20px; background: #f9f9f9; }
+    h2   { color: #c0392b; }
+    .badge { background: #c0392b; color: white; font-size: 11px; padding: 3px 8px; border-radius: 4px; margin-left: 8px; }
+    .ticket { padding: 14px 16px; border: 1.5px solid #ddd; border-radius: 8px; margin: 10px 0;
+              cursor: pointer; background: white; transition: border-color .2s; }
+    .ticket:hover  { border-color: #3498db; }
+    .ticket.selected { border-color: #27ae60; background: #eafaf1; }
+    button { margin-top: 18px; padding: 12px 28px; background: #2c3e50; color: white;
+             border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    button:hover { background: #1a252f; }
+    #result { margin-top: 18px; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 500; }
+    .pass  { background: #eafaf1; color: #1e8449; border: 1px solid #82e0aa; }
+    .queue { background: #fef9e7; color: #b7950b; border: 1px solid #f9e79f; }
+    .block { background: #fdedec; color: #c0392b; border: 1px solid #f1948a; }
+    #log   { margin-top: 14px; font-size: 11px; color: #888; font-family: monospace; background: #f0f0f0;
+             padding: 10px; border-radius: 6px; max-height: 160px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h2>UAT Test Page <span class="badge">NOT PRODUCTION</span></h2>
+  <p style="color:#666;font-size:13px">This page tests the bot detection system. Open browser console to see signals being collected.</p>
+
+  <h3>Select your ticket:</h3>
+  <div class="ticket" data-ticket="VIP" onclick="selectTicket(this)">
+    <strong>VIP Section</strong> — £120 &nbsp;<span style="color:#888;font-size:12px">Row A1-A10</span>
+  </div>
+  <div class="ticket" data-ticket="GEN" onclick="selectTicket(this)">
+    <strong>General Admission</strong> — £45 &nbsp;<span style="color:#888;font-size:12px">Standing</span>
+  </div>
+  <div class="ticket" data-ticket="STU" onclick="selectTicket(this)">
+    <strong>Student</strong> — £25 &nbsp;<span style="color:#888;font-size:12px">ID required</span>
+  </div>
+
+  <button id="checkout-btn">Buy Tickets</button>
+
+  <div id="result" style="display:none"></div>
+  <div id="log"></div>
+
+  <script>
+    // ── Point this at your Codespace URL when running in Codespace ──
+    // In Codespace: replace localhost with your forwarded port URL
+    const API = 'http://localhost:8000';
+
+    let selectedTicket = null;
+
+    function selectTicket(el) {
+      document.querySelectorAll('.ticket').forEach(t => t.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedTicket = el.dataset.ticket;
+      addLog('Ticket selected: ' + selectedTicket);
+    }
+
+    document.getElementById('checkout-btn').addEventListener('click', async () => {
+      if (!selectedTicket) { alert('Please select a ticket first'); return; }
+      addLog('Checkout clicked — sending signal to API...');
+
+      try {
+        const res = await fetch(API + '/api/session/signal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_token: 'uat-' + Math.random().toString(36).slice(2,10),
+            trigger: 'checkout'
+          })
+        });
+        const data = await res.json();
+        showResult(data);
+        addLog('API response: ' + JSON.stringify(data));
+      } catch (e) {
+        addLog('ERROR: ' + e.message + ' — is the API running?');
+      }
+    });
+
+    function showResult(data) {
+      const el = document.getElementById('result');
+      el.style.display = 'block';
+      el.className = data.action;
+      const icons = { pass: '✅', queue: '⚠️', block: '🚫' };
+      el.innerHTML = `
+        ${icons[data.action]} <strong>${data.action.toUpperCase()}</strong>
+        &nbsp;|&nbsp; Score: <strong>${data.score}</strong>
+        &nbsp;|&nbsp; ${data.latency_ms}ms<br>
+        <span style="font-size:12px;font-weight:400">${data.reason}</span>
+      `;
+    }
+
+    function addLog(msg) {
+      const el = document.getElementById('log');
+      const t  = new Date().toLocaleTimeString();
+      el.innerHTML = `[${t}] ${msg}\n` + el.innerHTML;
+    }
+
+    addLog('UAT page loaded — move mouse, scroll, hover over tickets before clicking Buy');
+  </script>
+
+  <!-- Collector script (loads after page — async so it never blocks) -->
+  <script src="../client/src/collector.js" defer></script>
+</body>
+</html>
