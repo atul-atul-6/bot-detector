@@ -1,14 +1,23 @@
 {
-  "name": "Bot Detector UAT",
+  "name": "Ticket Bot Detector",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
-  "forwardPorts": [8000, 5432, 6379, 8123],
+  "forwardPorts": [8000, 5432, 6379],
   "portsAttributes": {
-    "8000": {"label": "FastAPI", "onAutoForward": "notify"},
-    "5432": {"label": "Postgres", "onAutoForward": "silent"},
-    "6379": {"label": "Redis",    "onAutoForward": "silent"}
+    "8000": { "label": "FastAPI", "onAutoForward": "notify" },
+    "5432": { "label": "Postgres", "onAutoForward": "silent" },
+    "6379": { "label": "Redis",    "onAutoForward": "silent" }
   },
-  "postCreateCommand": "pip install -r requirements.txt"
+  "postCreateCommand": "pip install -r requirements.txt",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "humao.rest-client"
+      ]
+    }
+  }
 }
