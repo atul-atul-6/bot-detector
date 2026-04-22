@@ -4,9 +4,9 @@ AI-powered behavioral analysis that detects scalper bots on ticketing websites.
 **Zero user friction. No CAPTCHA. No API key required.**
 
 ## To see ALL users including real bots, the website needs the script tag:
-      ```bash
-      <script src="YOUR-API-URL/static/collector.js" defer></script>
-      ```
+```bash
+<script src="YOUR-API-URL/static/collector.js" defer></script>
+```
 **Once this is on the website's checkout page, collector.js runs inside EVERY visitor's browser — yours, other users, and bots. Now your API sees all of them and can detect which ones are bots.**
 
 ## Quick start (Codespace)
