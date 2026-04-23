@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TicketWave — Live Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── Variables ─────────────────────────────────── */
+    :root {
+      --ink:    #0c0c0f;
+      --smoke:  #f5f3ef;
+      --cream:  #faf8f4;
+      --gold:   #c9a84c;
+      --gold2:  #e8c96a;
+      --mid:    #6b6760;
+      --border: #e2ddd6;
+      --red:    #c0392b;
+      --green:  #1e7e4e;
+      --amber:  #c07800;
+    }
+
+    /* ── Reset ─────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ─────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 0; opacity: .4;
+    }
+
+    /* ── Header ────────────────────────────────────── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(250,248,244,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 0 48px; height: 64px;
+    }
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px; letter-spacing: -.3px;
+      color: var(--ink);
+    }
+    .logo span { color: var(--gold); }
+    nav { display: flex; gap: 32px; }
+    nav a {
+      font-size: 13px; font-weight: 500;
+      color: var(--mid); text-decoration: none;
+      letter-spacing: .02em;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--ink); }
+
+    /* ── Hero ──────────────────────────────────────── */
+    .hero {
+      position: relative;
+      padding: 100px 48px 80px;
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 420px; gap: 60px;
+      align-items: center;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--ink); color: var(--gold2);
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .12em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 2px;
+      margin-bottom: 24px;
+    }
+    .hero-tag::before {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: var(--gold2);
+      animation: blink 1.4s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(40px, 5vw, 64px);
+      line-height: 1.05; letter-spacing: -.5px;
+      color: var(--ink); margin-bottom: 20px;
+    }
+    h1 em { font-style: italic; color: var(--gold); }
+    .hero-sub {
+      font-size: 16px; color: var(--mid);
+      line-height: 1.7; max-width: 440px;
+    }
+
+    /* Hero featured event card */
+    .hero-card {
+      background: var(--ink);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(12,12,15,.18);
+      animation: floatUp .8s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes floatUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:none} }
+    .hero-card-img {
+      width: 100%; height: 200px;
+      background: linear-gradient(135deg, #1a0533 0%, #3b1060 50%, #c9a84c 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 64px;
+    }
+    .hero-card-body { padding: 24px; }
+    .hero-card-body h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px; color: #fff; margin-bottom: 8px;
+    }
+    .hero-card-body p { font-size: 13px; color: #a09a90; margin-bottom: 20px; line-height: 1.6; }
+    .hero-btn {
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none; border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 600;
+      padding: 13px; cursor: pointer;
+      transition: background .2s, transform .15s;
+    }
+    .hero-btn:hover { background: var(--gold2); transform: translateY(-1px); }
+
+    /* ── Section ───────────────────────────────────── */
+    .section {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 48px 80px;
+    }
+    .section-hdr {
+      display: flex; align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .section-hdr h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px; letter-spacing: -.3px;
+    }
+    .section-hdr span {
+      font-size: 12px; color: var(--mid);
+      letter-spacing: .04em; text-transform: uppercase;
+    }
+
+    /* ── Event grid ────────────────────────────────── */
+    .events { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+
+    .event-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      cursor: pointer;
+      transition: box-shadow .25s, transform .25s;
+      animation: fadeIn .5s ease both;
+    }
+    .event-card:nth-child(2) { animation-delay: .08s; }
+    .event-card:nth-child(3) { animation-delay: .16s; }
+    .event-card:nth-child(4) { animation-delay: .24s; }
+    .event-card:nth-child(5) { animation-delay: .32s; }
+    .event-card:nth-child(6) { animation-delay: .40s; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    .event-card:hover { box-shadow: 0 12px 40px rgba(12,12,15,.1); transform: translateY(-3px); }
+
+    .event-thumb {
+      height: 140px; display: flex;
+      align-items: center; justify-content: center;
+      font-size: 48px;
+    }
+    .event-body { padding: 16px; }
+    .event-cat {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 6px;
+    }
+    .event-body h3 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 17px; margin-bottom: 6px; line-height: 1.3;
+    }
+    .event-meta { font-size: 12px; color: var(--mid); margin-bottom: 14px; line-height: 1.6; }
+    .price-row { display: flex; align-items: center; justify-content: space-between; }
+    .price { font-size: 18px; font-weight: 600; }
+    .price span { font-size: 11px; color: var(--mid); font-weight: 400; }
+    .buy-btn {
+      background: var(--ink); color: #fff;
+      border: none; border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      padding: 8px 16px; cursor: pointer;
+      transition: background .2s;
+      data-ticket: "";
+    }
+    .buy-btn:hover { background: #2a2a30; }
+
+    /* ── Checkout Modal ─────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(12,12,15,.6);
+      backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--cream);
+      border-radius: 20px;
+      width: 480px; max-width: 95vw;
+      padding: 36px;
+      box-shadow: 0 40px 100px rgba(12,12,15,.3);
+      animation: modalIn .3s cubic-bezier(.22,1,.36,1) both;
+      position: relative;
+    }
+    @keyframes modalIn { from{opacity:0;transform:translateY(20px) scale(.97)} to{opacity:1;transform:none} }
+    .modal-close {
+      position: absolute; top: 20px; right: 20px;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--smoke); border: none; cursor: pointer;
+      font-size: 16px; color: var(--mid);
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s;
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px; margin-bottom: 4px;
+    }
+    .modal-event-name { font-size: 13px; color: var(--mid); margin-bottom: 28px; }
+
+    /* Ticket tier selector */
+    .tier-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--mid); margin-bottom: 10px; }
+    .tiers { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+    .tier {
+      display: flex; align-items: center; justify-content: space-between;
+      border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      cursor: pointer; transition: border-color .2s, background .2s;
+    }
+    .tier:hover { border-color: var(--gold); background: #fffdf7; }
+    .tier.selected { border-color: var(--gold); background: #fffbee; }
+    .tier-info h4 { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+    .tier-info p { font-size: 12px; color: var(--mid); }
+    .tier-price { font-size: 18px; font-weight: 600; }
+
+    /* Pre-saved user details */
+    .saved-details {
+      background: var(--smoke);
+      border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .saved-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--green); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .saved-details h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+    .saved-details p { font-size: 12px; color: var(--mid); }
+
+    /* Qty row */
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .qty-label { font-size: 13px; flex: 1; }
+    .qty-ctrl { display: flex; align-items: center; gap: 10px; }
+    .qty-btn {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--smoke); border: 1px solid var(--border);
+      font-size: 18px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .qty-btn:hover { background: var(--border); }
+    .qty-val { font-size: 16px; font-weight: 600; min-width: 20px; text-align: center; }
+
+    /* Total + confirm */
+    .total-row {
+      display: flex; justify-content: space-between;
+      align-items: center; padding: 16px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .total-label { font-size: 13px; color: var(--mid); }
+    .total-val { font-size: 22px; font-weight: 600; }
+
+    .confirm-btn {
+      width: 100%;
+      background: var(--ink); color: #fff;
+      border: none; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 600;
+      padding: 15px; cursor: pointer;
+      transition: background .2s, transform .15s;
+      position: relative; overflow: hidden;
+    }
+    .confirm-btn:hover { background: #1e1e26; transform: translateY(-1px); }
+    .confirm-btn:active { transform: translateY(0); }
+    .confirm-btn.loading { pointer-events: none; opacity: .7; }
+
+    /* Result states */
+    .result-box {
+      display: none; text-align: center;
+      padding: 20px 0;
+    }
+    .result-box.show { display: block; }
+    .result-icon { font-size: 48px; margin-bottom: 12px; }
+    .result-box h3 { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 8px; }
+    .result-box p { font-size: 14px; color: var(--mid); line-height: 1.6; }
+    .result-score {
+      display: inline-block; margin-top: 16px;
+      font-size: 12px; font-weight: 500; padding: 4px 12px;
+      border-radius: 99px; letter-spacing: .04em;
+    }
+    .score-pass   { background: #d4edda; color: #155724; }
+    .score-queue  { background: #fff3cd; color: #856404; }
+    .score-block  { background: #f8d7da; color: #721c24; }
+
+    /* ── Bot detector panel ─────────────────────────── */
+    #bot-panel {
+      position: fixed; bottom: 20px; right: 20px; z-index: 300;
+      width: 300px;
+      background: var(--ink);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+      font-size: 12px; color: #a09a90;
+      transition: transform .3s;
+    }
+    #bot-panel h4 {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .1em; text-transform: uppercase;
+      color: var(--gold2); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    #bot-panel h4::before {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: #48bb78;
+      animation: blink 1.4s infinite; flex-shrink: 0;
+    }
+    .sig-row {
+      display: flex; justify-content: space-between;
+      padding: 5px 0; border-bottom: 1px solid #1e1e28;
+    }
+    .sig-row:last-of-type { border: none; }
+    .sig-key { color: #6b6760; }
+    .sig-val { color: #e2ddd6; font-weight: 500; font-family: monospace; }
+    .score-display {
+      margin-top: 12px; padding-top: 12px;
+      border-top: 1px solid #1e1e28;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .score-circle {
+      width: 48px; height: 48px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; flex-shrink: 0;
+      transition: all .4s;
+    }
+    .score-info { flex: 1; }
+    .score-info .verdict { font-size: 13px; font-weight: 600; }
+    .score-info .reason { font-size: 11px; color: #6b6760; margin-top: 2px; line-height: 1.4; }
+
+    /* ── Footer ────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center; padding: 32px 48px;
+      font-size: 12px; color: var(--mid);
+    }
+    footer strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ════════════════════════════════════════ -->
+<header>
+  <div class="logo">Ticket<span>Wave</span></div>
+  <nav>
+    <a href="#">Events</a>
+    <a href="#">Music</a>
+    <a href="#">Sports</a>
+    <a href="#">Theatre</a>
+  </nav>
+</header>
+
+<!-- ═══ HERO ══════════════════════════════════════════ -->
+<section class="hero">
+  <div>
+    <div class="hero-tag">Live now · 3 events selling fast</div>
+    <h1>Your next<br><em>unforgettable</em><br>night out.</h1>
+    <p class="hero-sub">Real tickets. Real events. No scalpers — our AI bot detection stops automated bulk-buyers before they get a single seat.</p>
+  </div>
+  <div class="hero-card">
+    <div class="hero-card-img">🎵</div>
+    <div class="hero-card-body">
+      <h3>The Midnight — Monsters Tour</h3>
+      <p>Fri 18 Jul 2025 · O2 Arena, London<br>Synthwave • 8,000 capacity • 74% sold</p>
+      <button class="hero-btn" onclick="openModal('the-midnight')">Get Tickets — from £65</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EVENTS GRID ════════════════════════════════════ -->
+<section class="section">
+  <div class="section-hdr">
+    <h2>Upcoming Events</h2>
+    <span>6 events available</span>
+  </div>
+  <div class="events" id="events-grid"></div>
+</section>
+
+<!-- ═══ CHECKOUT MODAL ════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div id="checkout-form">
+      <h2>Complete your order</h2>
+      <p class="modal-event-name" id="modal-event-name">Event name</p>
+
+      <div class="tier-label">Select ticket tier</div>
+      <div class="tiers" id="tier-list"></div>
+
+      <div class="saved-details">
+        <div class="saved-icon">✓</div>
+        <div>
+          <h4>Details pre-saved</h4>
+          <p>Alex Johnson · alex@example.com · Visa ending 4242</p>
+        </div>
+      </div>
+
+      <div class="qty-row">
+        <span class="qty-label">Number of tickets</span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(-1)">−</button>
+          <span class="qty-val" id="qty-val">1</span>
+          <button class="qty-btn" onclick="changeQty(1)">+</button>
+        </div>
+      </div>
+
+      <div class="total-row">
+        <span class="total-label">Total</span>
+        <span class="total-val" id="total-val">£65</span>
+      </div>
+
+      <button class="confirm-btn" id="confirm-btn" onclick="submitCheckout()">
+        Confirm Purchase
+      </button>
+    </div>
+
+    <div class="result-box" id="result-box">
+      <div class="result-icon" id="result-icon"></div>
+      <h3 id="result-title"></h3>
+      <p id="result-msg"></p>
+      <div class="result-score" id="result-score"></div>
+      <br><br>
+      <button onclick="closeModal()" style="background:var(--ink);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BOT DETECTOR PANEL ════════════════════════════ -->
+<div id="bot-panel">
+  <h4>Bot Detector — Live</h4>
+  <div class="sig-row"><span class="sig-key">Mouse entropy</span><span class="sig-val" id="p-entropy">—</span></div>
+  <div class="sig-row"><span class="sig-key">Scroll events</span><span class="sig-val" id="p-scroll">—</span></div>
+  <div class="sig-row"><span class="sig-key">Hover duration</span><span class="sig-val" id="p-hover">—</span></div>
+  <div class="sig-row"><span class="sig-key">Time to select</span><span class="sig-val" id="p-time">—</span></div>
+  <div class="sig-row"><span class="sig-key">Selection method</span><span class="sig-val" id="p-method">—</span></div>
+  <div class="score-display">
+    <div class="score-circle" id="p-circle" style="background:#1e1e28;color:#6b6760">—</div>
+    <div class="score-info">
+      <div class="verdict" id="p-verdict" style="color:#6b6760">Waiting...</div>
+      <div class="reason" id="p-reason">Interact with the site to begin scoring</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FOOTER ════════════════════════════════════════ -->
+<footer>
+  <p><strong>TicketWave</strong> — Dummy ticketing site for AI bot detection testing.<br>
+  Built to demonstrate real-time behavioral analysis. Not a real ticket vendor.</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════
+     BOT DETECTOR — COLLECTOR SCRIPT
+     ════════════════════════════════════════════════ -->
+<script>
+/* ── CONFIG ──────────────────────────────────────────
+   CHANGE THIS to your Codespace API URL when testing
+   Example: https://special-space-yodel-v577vv4w7rcx549-8000.app.github.dev
+   ─────────────────────────────────────────────────── */
+const BOT_API = "https://special-space-yodel-v577vv4w7rcx549-8000.app.github.dev";
+
+const SESSION_TOKEN = "tw-" + Math.random().toString(36).slice(2, 14);
+const t0 = Date.now();
+
+// Shared signal state
+const SIG = {
+  mousePath:    [],
+  scrollEvents: 0,
+  hoverMap:     {},
+  keyIntervals: [],
+  lastKey:      0,
+  selectionAt:  null,
+  checkoutAt:   null,
+  selectionMethod: null,
+  mouseEntropy: 0,
+  hoverTotal:   0,
+  keystrokeReg: 0,
+};
+
+/* ── Signal collectors ───────────────────────────── */
+
+// Mouse movement
+let lastSample = 0;
+document.addEventListener('mousemove', e => {
+  const now = Date.now();
+  if (now - lastSample > 40) {
+    SIG.mousePath.push([e.clientX, e.clientY, now - t0]);
+    lastSample = now;
+    SIG.mouseEntropy = calcEntropy(SIG.mousePath);
+    document.getElementById('p-entropy').textContent = SIG.mouseEntropy.toFixed(3);
+  }
+});
+
+// Scroll
+document.addEventListener('scroll', () => {
+  SIG.scrollEvents++;
+  document.getElementById('p-scroll').textContent = SIG.scrollEvents;
+}, { passive: true });
+
+// Hover on ticket elements
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('.tier, .buy-btn, .event-card');
+  if (el) SIG.hoverMap[el.className.slice(0,20)] = SIG.hoverMap[el.className.slice(0,20)] || Date.now();
+});
+document.addEventListener('mouseout', e => {
+  const el = e.target.closest('.tier, .buy-btn, .event-card');
+  if (el) {
+    const k = el.className.slice(0,20);
+    if (SIG.hoverMap[k] && SIG.hoverMap[k] < Date.now() - 10) {
+      SIG.hoverMap[k] = Date.now() - SIG.hoverMap[k];
+    }
+  }
+  SIG.hoverTotal = Object.values(SIG.hoverMap)
+    .filter(v => v < 1e6).reduce((a,b) => a+b, 0) / 1000;
+  document.getElementById('p-hover').textContent = SIG.hoverTotal.toFixed(1) + 's';
+});
+
+// Keystroke timing
+document.addEventListener('keydown', () => {
+  const now = Date.now();
+  if (SIG.lastKey) SIG.keyIntervals.push(now - SIG.lastKey);
+  SIG.lastKey = now;
+  SIG.keystrokeReg = calcKeystrokeReg(SIG.keyIntervals);
+});
+
+/* ── Math helpers ────────────────────────────────── */
+function calcEntropy(path) {
+  if (path.length < 4) return 0;
+  const angles = [];
+  for (let i = 1; i < path.length - 1; i++) {
+    const a1 = Math.atan2(path[i][1]-path[i-1][1], path[i][0]-path[i-1][0]);
+    const a2 = Math.atan2(path[i+1][1]-path[i][1], path[i+1][0]-path[i][0]);
+    angles.push(((a2 - a1 + Math.PI) / (2*Math.PI)) * 8);
+  }
+  const bins = new Array(8).fill(0);
+  angles.forEach(a => bins[Math.floor(a) % 8]++);
+  const n = angles.length;
+  const h = -bins.reduce((acc, c) => {
+    const p = c / n;
+    return p > 0 ? acc + p * Math.log2(p) : acc;
+  }, 0);
+  return parseFloat((h / Math.log2(8)).toFixed(4));
+}
+
+function calcKeystrokeReg(intervals) {
+  if (intervals.length < 3) return 0;
+  const mean = intervals.reduce((a,b) => a+b, 0) / intervals.length;
+  const std  = Math.sqrt(intervals.map(t => (t-mean)**2).reduce((a,b)=>a+b,0) / intervals.length);
+  return parseFloat(Math.max(0, Math.min(1, 1 - std/mean)).toFixed(4));
+}
+
+/* ── Signal sender ───────────────────────────────── */
+async function sendSignal(trigger) {
+  const timeToSelect = SIG.selectionAt ? (SIG.selectionAt - t0) / 1000 : null;
+  const timeToCheckout = (SIG.checkoutAt && SIG.selectionAt)
+    ? (SIG.checkoutAt - SIG.selectionAt) / 1000 : null;
+
+  if (trigger === 'checkout') {
+    document.getElementById('p-time').textContent =
+      timeToSelect ? timeToSelect.toFixed(1) + 's' : '—';
+    document.getElementById('p-method').textContent =
+      SIG.selectionMethod || '—';
+  }
+
+  try {
+    const res = await fetch(BOT_API + '/api/session/signal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_token:        SESSION_TOKEN,
+        trigger,
+        time_to_select:       timeToSelect,
+        time_to_checkout:     timeToCheckout,
+        mouse_entropy:        SIG.mouseEntropy,
+        mouse_path_length:    SIG.mousePath.length,
+        scroll_events:        SIG.scrollEvents,
+        hover_duration:       SIG.hoverTotal,
+        keystroke_regularity: SIG.keystrokeReg,
+        selection_method:     SIG.selectionMethod || 'click',
+      })
+    });
+    const data = await res.json();
+    if (trigger === 'checkout') updatePanel(data);
+    return data;
+  } catch(e) {
+    console.warn('[BotDetector] API unreachable:', e.message);
+    return null;
+  }
+}
+
+function updatePanel(data) {
+  if (!data) return;
+  const colors = { human: '#48bb78', suspicious: '#f6ad55', bot: '#fc8181' };
+  const bg     = { human: '#1c3a2a', suspicious: '#3a2d1a', bot: '#3a1a1a' };
+  const v = data.verdict || (data.score > 0.70 ? 'bot' : data.score > 0.35 ? 'suspicious' : 'human');
+  const col = colors[v] || '#a09a90';
+
+  const circle = document.getElementById('p-circle');
+  circle.textContent = data.score.toFixed(2);
+  circle.style.background = bg[v] || '#1e1e28';
+  circle.style.color = col;
+
+  document.getElementById('p-verdict').textContent = v.toUpperCase();
+  document.getElementById('p-verdict').style.color = col;
+  document.getElementById('p-reason').textContent =
+    (data.reason || '').slice(0, 80) + ((data.reason||'').length > 80 ? '…' : '');
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════
+     SITE LOGIC — Events data + Modal
+     ════════════════════════════════════════════════ -->
+<script>
+const EVENTS = [
+  { id: 'midnight', emoji: '🎵', cat: 'Music', name: 'The Midnight — Monsters Tour', date: 'Fri 18 Jul 2025', venue: 'O2 Arena, London', tiers: [{name:'General',price:65},{name:'Floor',price:95},{name:'VIP',price:180}] },
+  { id: 'comedy',  emoji: '🎭', cat: 'Comedy', name: 'Big Comedy Night — Sold Out Tour', date: 'Sat 19 Jul 2025', venue: 'Royal Albert Hall', tiers: [{name:'Balcony',price:35},{name:'Stalls',price:55},{name:'Front Row',price:120}] },
+  { id: 'football',emoji: '⚽', cat: 'Sports', name: 'Premier League — Final Day', date: 'Sun 20 Jul 2025', venue: 'Wembley Stadium', tiers: [{name:'Terrace',price:45},{name:'Seat',price:85},{name:'Corporate',price:250}] },
+  { id: 'jazz',    emoji: '🎷', cat: 'Music', name: 'Blue Note Jazz Festival', date: 'Thu 24 Jul 2025', venue: 'Roundhouse, London', tiers: [{name:'Standing',price:30},{name:'Seated',price:50}] },
+  { id: 'theatre', emoji: '🎬', cat: 'Theatre', name: 'Hamilton — West End Revival', date: 'Fri 25 Jul 2025', venue: 'Victoria Palace Theatre', tiers: [{name:'Upper Circle',price:55},{name:'Dress Circle',price:95},{name:'Stalls',price:140}] },
+  { id: 'boxing',  emoji: '🥊', cat: 'Sports', name: 'World Title Fight Night', date: 'Sat 26 Jul 2025', venue: 'The O2, London', tiers: [{name:'Upper',price:75},{name:'Lower',price:150},{name:'Ringside',price:500}] },
+];
+
+const BKGS = [
+  'linear-gradient(135deg,#1a0533,#3b1060)',
+  'linear-gradient(135deg,#0a2a1a,#1a5c3a)',
+  'linear-gradient(135deg,#0c1f3a,#1a4080)',
+  'linear-gradient(135deg,#3a1a00,#7a3a00)',
+  'linear-gradient(135deg,#1a0a2a,#4a1a60)',
+  'linear-gradient(135deg,#2a0a0a,#6a1a1a)',
+];
+
+// Render event cards
+const grid = document.getElementById('events-grid');
+EVENTS.forEach((ev, i) => {
+  grid.innerHTML += `
+    <div class="event-card" data-id="${ev.id}">
+      <div class="event-thumb" style="background:${BKGS[i]}">${ev.emoji}</div>
+      <div class="event-body">
+        <div class="event-cat">${ev.cat}</div>
+        <h3>${ev.name}</h3>
+        <div class="event-meta">${ev.date}<br>${ev.venue}</div>
+        <div class="price-row">
+          <div class="price">£${ev.tiers[0].price} <span>from</span></div>
+          <button class="buy-btn" data-ticket="${ev.id}" onclick="openModal('${ev.id}')">Buy Tickets</button>
+        </div>
+      </div>
+    </div>`;
+});
+
+// Modal state
+let currentEvent = null;
+let selectedTier = null;
+let qty = 1;
+
+function openModal(id) {
+  currentEvent = EVENTS.find(e => e.id === id);
+  if (!currentEvent) return;
+
+  // Track selection
+  SIG.selectionAt = Date.now();
+  SIG.selectionMethod = event?.isTrusted === false ? 'dom_inject' : 'click';
+  sendSignal('selection');
+
+  document.getElementById('modal-event-name').textContent =
+    currentEvent.name + ' · ' + currentEvent.date;
+
+  // Render tiers
+  const list = document.getElementById('tier-list');
+  list.innerHTML = '';
+  currentEvent.tiers.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'tier' + (i === 0 ? ' selected' : '');
+    div.setAttribute('data-ticket', t.name);
+    div.innerHTML = `
+      <div class="tier-info">
+        <h4>${t.name}</h4>
+        <p>${i === 0 ? 'Best value' : i === currentEvent.tiers.length-1 ? 'Premium experience' : 'Great seats'}</p>
+      </div>
+      <div class="tier-price">£${t.price}</div>`;
+    div.onclick = () => {
+      document.querySelectorAll('.tier').forEach(el => el.classList.remove('selected'));
+      div.classList.add('selected');
+      selectedTier = t;
+      updateTotal();
+    };
+    list.appendChild(div);
+  });
+
+  selectedTier = currentEvent.tiers[0];
+  qty = 1;
+  document.getElementById('qty-val').textContent = qty;
+  updateTotal();
+
+  document.getElementById('checkout-form').style.display = 'block';
+  document.getElementById('result-box').classList.remove('show');
+  document.getElementById('confirm-btn').classList.remove('loading');
+  document.getElementById('confirm-btn').textContent = 'Confirm Purchase';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function changeQty(delta) {
+  qty = Math.max(1, Math.min(6, qty + delta));
+  document.getElementById('qty-val').textContent = qty;
+  updateTotal();
+}
+
+function updateTotal() {
+  if (!selectedTier) return;
+  document.getElementById('total-val').textContent = '£' + (selectedTier.price * qty);
+}
+
+async function submitCheckout() {
+  const btn = document.getElementById('confirm-btn');
+  btn.classList.add('loading');
+  btn.textContent = 'Processing...';
+
+  SIG.checkoutAt = Date.now();
+  const data = await sendSignal('checkout');
+
+  if (!data) {
+    // API unreachable — show error
+    showResult('error', null);
+    return;
+  }
+
+  setTimeout(() => showResult(data.action, data), 600);
+}
+
+function showResult(action, data) {
+  document.getElementById('checkout-form').style.display = 'none';
+  const box = document.getElementById('result-box');
+  box.classList.add('show');
+
+  const configs = {
+    pass: {
+      icon: '🎉',
+      title: 'Booking Confirmed!',
+      msg: `Your ${qty} × ${selectedTier?.name} ticket${qty>1?'s':''} for <strong>${currentEvent?.name}</strong> are confirmed. Check your email for details.`,
+      scoreClass: 'score-pass',
+      scoreText: `Human verified · Score: ${data?.score?.toFixed(3)} · Passed`
+    },
+    queue: {
+      icon: '⏳',
+      title: 'Almost There...',
+      msg: 'Your order is being verified. You\'ll receive a confirmation email within 5 minutes.',
+      scoreClass: 'score-queue',
+      scoreText: `Under review · Score: ${data?.score?.toFixed(3)} · Queued`
+    },
+    block: {
+      icon: '😔',
+      title: 'Tickets Sold Out',
+      msg: 'Sorry, these tickets are no longer available. Please check back later or explore other events.',
+      scoreClass: 'score-block',
+      scoreText: `Bot detected · Score: ${data?.score?.toFixed(3)} · Blocked`
+    },
+    error: {
+      icon: '⚠️',
+      title: 'API Offline',
+      msg: 'Bot detection API is not reachable. Make sure your Codespace is running and port 8000 is public.',
+      scoreClass: 'score-queue',
+      scoreText: 'Check your BOT_API URL in the script'
+    }
+  };
+
+  const c = configs[action] || configs.pass;
+  document.getElementById('result-icon').textContent = c.icon;
+  document.getElementById('result-title').textContent = c.title;
+  document.getElementById('result-msg').innerHTML = c.msg;
+  const scoreEl = document.getElementById('result-score');
+  scoreEl.className = 'result-score ' + c.scoreClass;
+  scoreEl.textContent = c.scoreText;
+}
+</script>
+
+</body>
+</html>
